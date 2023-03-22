@@ -43,7 +43,7 @@ class UserController extends Controller
                  'status' => false,
                  'action' => "Register failed",
                  'data' => $obj,
-                 'error' => $validator->errors()->all()
+                 'errors' => $validator->errors()->all()
              ]);
             }
             if($request->platform == 'normal'){
@@ -392,28 +392,27 @@ class UserController extends Controller
     ///////////// DELETE ACCOUNT ////////////////
 
 
-    public function deleteAccount(Request $request){
+    public function deleteAccount($userId){
         $obj = new \stdClass();
-
-        $validator = Validator::make($request->all(), 
-        [
-           'id'=> 'required',
-
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'action' => "Account not Delete",
-                'data' => $obj,
-                'error' => $validator->errors()->all()
-            ]);
-        }
-        else{
-            $user=User::where('id',$request->id)->first();
+        
+    
+            $user=User::find($userId);
             if($user){
-                $user->delete([
-                    'id' => $request->id
-                ]);
+                $user->followers()->delete();
+                $user->followings()->delete();
+                $user->blockedBy()->delete();
+                $user->blockedUsers()->delete();
+                $user->notificationsReceived()->delete();
+                $user->notificationsSent()->delete();
+                $user->recipe()->delete();
+                $user->sender()->delete();
+                $user->reciver()->delete();
+                $user->reviews()->delete();
+
+                
+
+                $user->delete();
+                
                 return response()->json([
                     'status' => true,
                     'action' => "Account  delete",
@@ -430,7 +429,7 @@ class UserController extends Controller
                 ]);
             }
            
-        }
+    
     }
 
     ///////////// EDIT PROFILE ////////////////

@@ -30,7 +30,7 @@ Route::post('/login',[UserController::class, 'login']);
 Route::post('/resetAccountVerify',[UserController::class, 'resetAccountVerify']);
 Route::post('/resetPassword',[UserController::class, 'resetPassword']);
 Route::post('/chnagePassword',[UserController::class, 'chnagePassword']);
-Route::get('/deleteAccount',[UserController::class, 'deleteAccount']);
+Route::get('/deleteAccount/{userId}',[UserController::class, 'deleteAccount']);
 Route::post('/editProfile',[UserController::class, 'editProfile']);
 Route::post('/{userId}/search',[UserController::class, 'search']);
 Route::get('/blockUser',[UserController::class, 'blockUser']);

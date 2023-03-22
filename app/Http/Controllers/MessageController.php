@@ -179,15 +179,17 @@ class MessageController extends Controller
     public function readMessage(Request $request,$userId){
         $user = User::find($userId);
         if($user){
-            $messages = Message::where('from_id', $request->from_id)->where('to_id', $userId)->get();
+            $messages = Message::where('from_id', $request->from_id)->where('to_id', $userId)->where('is_read', 0)->update([
+                'is_read' => true
+            ]);
 
-        foreach($messages as $message){
-            if(!$message->is_read){
-                $message->update([
-                    'is_read' => true
-                ]);
-            }
-        }
+        // foreach($messages as $message){
+        //     if(!$message->is_read){
+        //         $message->update([
+        //             'is_read' => true
+        //         ]);
+        //     }
+        // }
         
         return response()->json([
             'status' => true,
