@@ -88,25 +88,35 @@ class MessageController extends Controller
 
         $user = User::find($userId);
         if($user){
-            $users = User::whereIn('id', function ($query) use ($userId) {
-                        $query->select(DB::raw('IF(from_id = '.$userId.', to_id, from_id) as user_id'))
-                              ->from('messages')
-                              ->where('from_id', $userId)
-                              ->orWhere('to_id', $userId)
-                              ->groupBy('user_id');
-                    })
-                    ->orderBy('created_at', 'desc')
-                    ->get(['id', 'full_name', 'image']);
+           $inbox =  DB::table('messages')
+           ->select('messages.from_id', 'messages.to_id', 'messages.message', 'messages.type','messages.attachment','messages.is_read')
+           ->join('users', function ($join) use ($userId) {
+               $join->on('users.id', '=', 'messages.from_id')
+                    ->orWhere('users.id', '=', 'messages.to_id')
+                    ->where('users.id', '<>', $userId);
+           })
+           ->whereIn(DB::raw('(LEAST(from_id, to_id), GREATEST(from_id, to_id), messages.id)'), function($query) {
+               $query->select(DB::raw('LEAST(from_id, to_id) as a, GREATEST(from_id, to_id) as b, MAX(messages.id) as max_id'))
+                     ->from('messages')
+                     ->groupBy('a', 'b');
+           })
+           ->orderBy('messages.id', 'desc')
+           ->get()
+           ->groupBy(function($item) {
+               return $item->from_id < $item->to_id ? $item->from_id.'_'.$item->to_id : $item->to_id.'_'.$item->from_id;
+           })
+           ->map(function($grouped) use ($userId) {
+               $latest = $grouped->first();
+               $other_user_id = $latest->from_id == $userId ? $latest->to_id : $latest->from_id;
+               $latest->other_user = DB::table('users')->select('id','full_name','image')->where('id', $other_user_id)->first();
+               return $latest;
+           })
+           ->sortByDesc('created_at')
+           ->values();
 
-                    return response()->json([
-                        'status' => true,
-                        'data' => $users
-                    ]);
-        }
-        else{
-            return response()->json([
-            'status' => false,
-            'error' => 'Invalid user',
+           return response()->json([
+            'status' => true,
+            'data' => $inbox
         ]);
         }
     }
@@ -125,8 +135,11 @@ class MessageController extends Controller
                 'errors' => $validator->errors()->all()
             ]);
         } else {
+
             $conversations = Message::where('from_id', $request->from)
-                ->orWhere('to_id', $request->to)
+                ->where('to_id', $request->to)
+                ->orWhere('from_id',$request->to)
+                ->where('to_id',$request->from)
                 ->orderBy('created_at', 'desc')
                 ->get();
     
@@ -164,7 +177,9 @@ class MessageController extends Controller
 
 
     public function readMessage(Request $request,$userId){
-        $messages = Message::where('from_id', $request->from_id)->where('to_id', $userId)->get();
+        $user = User::find($userId);
+        if($user){
+            $messages = Message::where('from_id', $request->from_id)->where('to_id', $userId)->get();
 
         foreach($messages as $message){
             if(!$message->is_read){
@@ -174,7 +189,93 @@ class MessageController extends Controller
             }
         }
         
-        return 'messages read';
+        return response()->json([
+            'status' => true,
+            'action' => 'Message read'
+        ]);
+        }
+        else{
+            return response()->json([
+                'status' => false,
+                'action' => 'Invalid user'
+            ]);
+        }
+        
     }
+
+    public function messageCount($userId){
+        $obj = new \stdClass();
+
+        $user = User::find($userId);
+        if($user){
+            $count = Message::where('to_id',$userId)->where('is_read', 0)->count();
+            return response()->json([
+                'status' => true,
+                'action' => 'Messages',
+                'count'  => $count
+            ]);
+        }
+        else{
+            return response()->json([
+                'status' => false,
+                'action' => 'Invalid user'
+            ]);
+        }
+
+    }
+
+    public function deleteMessage($userId,$msgId){
+        $user = User::find($userId);
+        if($user){
+            $msg = Message::find($msgId);
+            if($msg){
+                if($msg->from_id == $userId){
+                    $msg->delete();
+                    return response()->json([
+                        'status' => true,
+                        'action' => 'Message deleted'
+                    ]);
+                }else{
+                    return response()->json([
+                        'status' => false,
+                        'action' => 'You cant delete message'
+                    ]);
+                }
+            }
+            else{
+                return response()->json([
+                    'status' => false,
+                    'action' => 'Invalid message'
+                ]);
+            }
+        }
+        else{
+            return response()->json([
+                'status' => false,
+                'action' => 'Invalid user'
+            ]);
+        }
+    }
+    public function DeleteConversation($user_id){
+
+    }
+
     
 }
+
+
+
+
+// DB::table('messages')
+//             ->select('from_id', 'to_id', 'message')
+//             ->where(function($query) use ($user_id) {
+//                 $query->where('from_id', $user_id)
+//                       ->orWhere('to_id', $user_id);
+//             })
+//             ->whereIn(DB::raw('(LEAST(from_id, to_id), GREATEST(from_id, to_id), id)'), function($query) {
+//                 $query->select(DB::raw('LEAST(from_id, to_id) as a, GREATEST(from_id, to_id) as b, MAX(id) as max_id'))
+//                       ->from('messages')
+//                       ->groupBy('a', 'b');
+//             })
+//             ->orderBy('id', 'desc')
+//             ->get();
