@@ -52,7 +52,7 @@ class User extends Authenticatable
     }
     public function blockedBy()
     {
-        return $this->hasMany(Blocklist::class, 'to_user_id');
+        return $this->hasMany(Blocklistt::class, 'to_user_id');
     }
 
     public function blockedUsers()
@@ -79,9 +79,10 @@ class User extends Authenticatable
     public function reciver()
     {
         return $this->hasMany(Message::class, 'to_id');
-    }public function reviews()
+    }
+    public function reviews()
     {
-        return $this->hasMany(Message::class, 'user_id');
+        return $this->hasMany(Review::class, 'user_id');
     }
 
 }

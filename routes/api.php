@@ -50,7 +50,7 @@ Route::post('/listChef',[UserController::class, 'listChef']);
 Route::get('/{userId}/profile',[UserController::class, 'profile']);
 Route::post('/{userId}/addRecipe',[UserController::class, 'addRecipe']);
 Route::get('/{userId}/recipeList',[UserController::class, 'recipeList']);
-Route::get('/userRecipeList',[UserController::class, 'userRecipeList']);
+Route::get('/userRecipeList/{userId}',[UserController::class, 'userRecipeList']);
 
 Route::post('/addReview',[UserController::class, 'addReview']);
 Route::get('/{recipeId}/recipeReview',[UserController::class, 'recipeReview']);

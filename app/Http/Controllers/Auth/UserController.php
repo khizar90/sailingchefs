@@ -771,9 +771,10 @@ class UserController extends Controller
         }
     }
 
-    public function userRecipeList(Request $request,$userId){
+    public function userRecipeList($userId){
 
-        $recipe = Recipe::where('user_id',$request->id)->get();
+        $recipe = Recipe::where('user_id',$userId)->get();
+
         if ($recipe->count() > 0) {
             return response()->json([
                 'status' => true,
