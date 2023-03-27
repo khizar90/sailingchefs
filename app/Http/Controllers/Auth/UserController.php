@@ -1005,8 +1005,11 @@ class UserController extends Controller
         $user->followers  =$followerCount;
         $user->dishes  =$dishes;
 
-
-        return $user;
+        return response()->json([
+            'status' => true,
+            'action' => 'Profile',
+            'data'  => $user
+        ]);
     }
 
 

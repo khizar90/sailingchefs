@@ -69,7 +69,7 @@ Route::post('/conversation',[MessageController::class, 'conversation']);
 Route::post('/readMessage/{userId}',[MessageController::class, 'readMessage']);
 Route::get('/messageCount/{userId}',[MessageController::class, 'messageCount']);
 Route::get('/deleteMessage/{userId}/{msgId}',[MessageController::class, 'deleteMessage']);
-
+Route::post('/deleteConversation',[MessageController::class, 'deleteConversation']);
 
 
 

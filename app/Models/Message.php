@@ -11,4 +11,8 @@ class Message extends Model
     protected $fillable = [
         'is_read', // add is_read to fillable array
     ];
+
+    protected $hidden = [
+        'delete_by'
+    ];
 }

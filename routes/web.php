@@ -43,6 +43,8 @@ Route::get('/userList',[AdminController::class, 'userList'])->name('userList');
 Route::post('/{cat_id}/updateCatgory',[AdminController::class, 'updateCatgory'])->name('updateCatgory');
 Route::post('/{all_id}/updateAllergy',[AdminController::class, 'updateAllergy'])->name('updateAllergy');
 Route::post('/{all_id}/updateDietary',[AdminController::class, 'updateDietary'])->name('updateDietary');
+Route::get('/search',[AdminController::class, 'search'])->name('search');
+
 
 
 

@@ -130,4 +130,16 @@ class AdminController extends Controller
         ]);
         return redirect()->back();
     }
+
+
+    public function search(Request $request){
+        $request->validate([
+            'name' => 'required',
+        ]);
+    
+        $users = User::where('full_name','like', '%'.$request->name.'%')->get();
+    
+        return $users;
+        
+    }
 }

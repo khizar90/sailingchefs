@@ -100,6 +100,7 @@ class MessageController extends Controller
                      ->from('messages')
                      ->groupBy('a', 'b');
            })
+           ->where('messages.delete_by', '<>', $userId)
            ->orderBy('messages.id', 'desc')
            ->get()
            ->groupBy(function($item) {
@@ -135,13 +136,31 @@ class MessageController extends Controller
                 'errors' => $validator->errors()->all()
             ]);
         } else {
-
-            $conversations = Message::where('from_id', $request->from)
-                ->where('to_id', $request->to)
-                ->orWhere('from_id',$request->to)
-                ->where('to_id',$request->from)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $conversations = Message::where(function ($query) use ($request) {
+                $query->where('from_id', $request->from)
+                    ->where('to_id', $request->to)
+                    ->where(function ($subquery) use ($request) {
+                        $subquery->whereNull('delete_by')
+                            ->orWhere('delete_by', '!=', $request->from);
+                    });
+            })
+            ->orWhere(function ($query) use ($request) {
+                $query->where('from_id', $request->to)
+                    ->where('to_id', $request->from)
+                    ->where(function ($subquery) use ($request) {
+                        $subquery->whereNull('delete_by')
+                            ->orWhere('delete_by', '!=', $request->from);
+                    });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+           
+            // $conversations = Message::where('from_id', $request->from)
+            //     ->where('to_id', $request->to)
+            //     ->orWhere('from_id',$request->to)
+            //     ->where('to_id',$request->from)
+            //     ->orderBy('created_at', 'desc')
+            //     ->get();
     
             foreach ($conversations as $conversation) {
                 $sender = DB::table('users')
@@ -210,7 +229,7 @@ class MessageController extends Controller
 
         $user = User::find($userId);
         if($user){
-            $count = Message::where('to_id',$userId)->where('is_read', 0)->count();
+            $count = Message::where('to_id',$userId)->where('is_read',0)->where('delete_by','<>',$userId)->count();
             return response()->json([
                 'status' => true,
                 'action' => 'Messages',
@@ -231,18 +250,19 @@ class MessageController extends Controller
         if($user){
             $msg = Message::find($msgId);
             if($msg){
-                if($msg->from_id == $userId){
-                    $msg->delete();
-                    return response()->json([
-                        'status' => true,
-                        'action' => 'Message deleted'
-                    ]);
-                }else{
-                    return response()->json([
-                        'status' => false,
-                        'action' => 'You cant delete message'
-                    ]);
+                if($msg->delete_by == 0){
+                    $msg->delete_by = $userId;
+                    $msg->save();
                 }
+                else{
+                    $msg->delete();
+
+                }
+                
+                return response()->json([
+                    'status' => true,
+                    'action' => 'Message deleted'
+                ]);
             }
             else{
                 return response()->json([
@@ -256,10 +276,25 @@ class MessageController extends Controller
                 'status' => false,
                 'action' => 'Invalid user'
             ]);
-        }
+        } 
     }
-    public function DeleteConversation($user_id){
-
+    public function deleteConversation(Request $request){
+        $messages = Message::where('from_id',$request->from)->where('to_id',$request->to)
+        ->orWhere('from_id',$request->to)->where('to_id',$request->from)->get();
+        foreach ($messages as $message) {
+            if($message->delete_by == 0){
+                $message->delete_by = $request->from;
+                $message->save();
+            }
+            else{
+                $message->delete();
+            }
+            
+        }
+        return response()->json([
+            'status' => true,
+            'action' => 'Conversation deleted'
+        ]);
     }
 
     
@@ -281,3 +316,4 @@ class MessageController extends Controller
 //             })
 //             ->orderBy('id', 'desc')
 //             ->get();
+
