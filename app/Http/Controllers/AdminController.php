@@ -40,6 +40,7 @@ class AdminController extends Controller
         session()->flash('add', 'catgory added successfully!');
         
         $catgories = DB::table('categories_recipe')->get();
+        
         return view('catgory' ,compact('catgories'));
     }
 
